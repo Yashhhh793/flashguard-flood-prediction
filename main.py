@@ -12,8 +12,8 @@ class Req(BaseModel): station:str
 
 def load_live():
  d=pd.read_csv(LIVE); d.columns=[str(c).strip() for c in d.columns]
- tc=next(c for c in d.columns if c.lower() in ['timestamp','datetime','date_time','date']); rc=next(c for c in d.columns if 'rainfall' in c.lower()); sc=next(c for c in d.columns if c.lower() in ['station','station name','station_name'])
- d['timestamp']=pd.to_datetime(d[tc],dayfirst=True,errors='coerce'); d['rainfall_mm']=pd.to_numeric(d[rc],errors='coerce'); d.loc[d.rainfall_mm<0,'rainfall_mm']=np.nan; d['station_clean']=d[sc].astype(str).str.strip(); d=d.dropna(subset=['timestamp']).sort_values(['station_clean','timestamp']).drop_duplicates(['station_clean','timestamp'],keep='last')
+ tc=next((c for c in d.columns if c.lower() in ['timestamp','datetime','date_time','date','data acquisition time']),None); rc=next((c for c in d.columns if 'rainfall' in c.lower()),None); sc=next((c for c in d.columns if c.lower() in ['station','station name','station_name']),None)
+ d['timestamp']=pd.to_datetime(d[tc],dayfirst=True,errors='coerce'); d['rainfall_mm']=pd.to_numeric(d[rc],errors='coerce'); d['station_clean']=d[sc].astype(str).str.strip() d.loc[d.rainfall_mm<0,'rainfall_mm']=np.nan; d['station_clean']=d[sc].astype(str).str.strip(); d=d.dropna(subset=['timestamp']).sort_values(['station_clean','timestamp']).drop_duplicates(['station_clean','timestamp'],keep='last')
  g=d.groupby('station_clean',group_keys=False)
  for h in [1,3,6,12,24,72]: d[f'rainfall_{h}h_mm']=g.rainfall_mm.rolling(h,min_periods=max(1,h//2)).sum().reset_index(level=0,drop=True)
  return d
